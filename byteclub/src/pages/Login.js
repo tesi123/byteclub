@@ -1,22 +1,61 @@
 import React, { useState } from 'react';
+import Projects from './Projects';
+import { useNavigate } from 'react-router-dom';
 
 function Login() {
+  const navigate = useNavigate(); /* to navigate to project page when logged in */
   const [displayPopup, setdisplayPopup] = useState(false); 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [newUsername, setnewUsername] = useState('');
   const [newPassword, setNewPassword] = useState(''); 
 
-  const runLogin = (e) => {
+  const runLogin = async(e) => {
     e.preventDefault(); 
     alert(`Logging in as: ${username}`); 
+    /* link to backend search for username and pswd that matches in dir */
+
+    /* send the data to backend, convery username and pswd to json string */
+    const requestOptions = {
+      method: "POST",
+      headers: {"Content-Type" : "application/json"},
+      mode: "cors",
+      body: JSON.stringify({'Username': username, 'pswd': password })
+    };
+    const response =  await fetch ("http://127.0.0.1:81/logIn/", requestOptions); /* await until response comes back */
+    const data = await response.json(); /* parses response into JSON */
+    if (data.success) {
+      alert(" Logged In successfully!");
+      setdisplayPopup(false);
+      navigate("/Projects");
+    } else {
+      alert("error logging in check username or password");
+    }
+    
+      
   };
 
-  const CreateAccount = (e) => {
+  const CreateAccount = async(e) => {
     e.preventDefault(); 
     alert(`Creating account for: ${newUsername}`);
     setdisplayPopup(false); 
+    /* added link to backend when you createAccount save username &pswd*/
+    const response = await fetch("/createAccount/",{
+      method: "POST", 
+      headers:  {"Content-Type" : "application/json"},
+      mode: "cors",
+      body: JSON.stringify({'Username': newUsername, 'pswd': newPassword})
+    });
+    const data =  await response.json();
+    if (data.success) {
+      alert("Account created!");
+      setdisplayPopup(false);
+    } else {
+      alert("Username already exists or error in password");
+    }
   };
+
+  
 
   return (
     <div style={{ padding: '20px' }}>
