@@ -3,11 +3,15 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { AuthProvider } from './Auth'; // Authentication for logIn
 
+/* makes it so that you need to logIn before accessing other pages */
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
+    <AuthProvider> 
     <App />
+    </AuthProvider>,
   </React.StrictMode>
 );
 

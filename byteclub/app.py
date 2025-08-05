@@ -16,7 +16,6 @@ uri = "mongodb+srv://haas:haaspassword@haas-app-cluster.p0wa0nu.mongodb.net/"
 # Create a new client and connect to the server
 client = MongoClient(uri, server_api=ServerApi('1'))
 # MongoDB connection
-#client = MongoClient("mongodb+srv://haas:hasspassword2026@haas-app-cluster.p0wa0nu.mongodb.net/")  # adjust if using Atlas
 # Send a ping to confirm a successful connection
 try:
     client.admin.command('ping')
@@ -51,7 +50,6 @@ def accountCreate() :
     #check user or pswd is missing or if user exists already
     if not user or not pswd : 
         return jsonify ({'success': False, 'message': 'username or password is missing'})
-    #if any(name['Username'] == user for name in tempUserArr):
     if users_collection.find_one({"username": str(user) }):
         return jsonify ({'success': False, 'message': 'username already exists'})
     
@@ -75,7 +73,6 @@ def accountLogin() :
     if not user or not pswd : 
         return jsonify ({'success': False, 'message': 'username or password is missing'})
     dbUser = users_collection.find_one({"username": str(user) })
-    #if not any(name['Username'] == user for name in tempUserArr):
     if not dbUser:
         return jsonify ({'success': False, 'message': 'username does not exists'})
     

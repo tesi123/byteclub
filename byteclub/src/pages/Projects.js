@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Auth } from '../Auth'; //get the global username func
+
 
 function Projects() {
+  const { username } = useContext(Auth); // get username
   const navigate = useNavigate();
 
   // State for new project input fields
@@ -33,7 +36,7 @@ function Projects() {
 
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h2>Welcome, [User ID]</h2>
+      <h2>Welcome, {username} </h2>
 
       {/* Create New Project Section */}
       <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '30px' }}>

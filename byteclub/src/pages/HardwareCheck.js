@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
+import { Auth } from '../Auth'; //get the global username func
 
 export default function App() {
+  const { username } = useContext(Auth); // get username
   // filled in with dummy code
   const [userInfo, setUserInfo] = useState({
     userId: '_',
@@ -47,7 +49,7 @@ export default function App() {
       <header>
         <h1>Haas System</h1>
         <div>
-          <span>Welcome, <span>{userInfo.userId}</span></span>
+          <span>Welcome, <span>{username}</span></span>
           <span> | </span>
           <span>Current Project: <span>{userInfo.projectName}</span></span>
         </div>

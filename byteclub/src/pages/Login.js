@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import Projects from './Projects';
 import { useNavigate } from 'react-router-dom';
+import {Auth} from "../Auth"; // Authenticate and passes the username globally
+
 
 function Login() {
+  const {setGlobalUsername} = useContext(Auth) //set func global
   const navigate = useNavigate(); /* to navigate to project page when logged in */
   const [displayPopup, setdisplayPopup] = useState(false); 
   const [username, setUsername] = useState('');
@@ -26,9 +29,11 @@ function Login() {
     const data = await response.json(); /* parses response into JSON */
     if (data.success) {
       alert(" Logged In successfully!");
+      setGlobalUsername(username) // sets the success username globally
       setdisplayPopup(false);
       navigate("/Projects");
     } else {
+
       alert("error logging in check username or password");
     }
     
