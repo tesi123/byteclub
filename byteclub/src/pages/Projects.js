@@ -16,6 +16,7 @@ function Projects() {
 
   // State for existing project access
   const [existingProjectId, setExistingProjectId] = useState('');
+  const [projectDetails, setProjectDetails] = useState(null);
 
   // Handle creating a new project
   const handleCreate = () => {
@@ -24,9 +25,36 @@ function Projects() {
   };
 
   // Handle accessing an existing project
-  const handleAccess = () => {
+  const handleAccess = async() => {
     console.log('Accessing project:', existingProjectId);
-    navigate(`/project/${existingProjectId}`);
+    const id = parseInt(existingProjectId);
+    if (isNaN(id)) {
+      alert('Please enter a valid project ID');
+      setProjectDetails(null); // Clear project details if invalid ID
+      return;
+    }
+    try{
+      const response = await fetch(`http://localhost:81/Projects/`, {
+        method: 'POST',
+       mode: 'cors',headers: {"Content-Type" : "application/json"},
+        body: JSON.stringify({ project_id: id })
+      }); 
+      if (!response.ok) {
+        const text = await response.text(); // fallback to plain text/HTML
+        setProjectDetails(null); // Clear project details on error
+        console.error('Error response:', text);
+        throw new Error('Failed to fetch projects');
+}
+      const data = await response.json();
+      
+      setProjectDetails(data);
+      console.log('Project details:', data);
+    } catch (error) {
+      setProjectDetails(null); // Clear project details on error
+      console.error('Error accessing project:', error);
+      alert('Project not found or error accessing project');
+    }
+   // navigate(`/project/${existingProjectId}`);
   };
 
   // Navigate to Hardware Check page
@@ -68,6 +96,13 @@ function Projects() {
           onChange={(e) => setExistingProjectId(e.target.value)}
         /><br /><br />
         <button onClick={handleAccess}>Access Project</button>
+         {projectDetails && (
+    <div>
+      <h4>Project Name: {projectDetails.project_name}</h4>
+      <p>Description: {projectDetails.project_desc}</p>
+      <p>Hardware Sets: {projectDetails.hardware_set_id.join(', ')}</p>
+    </div>
+  )}
       </div>
 
       {/* Hardware Navigation Section */}

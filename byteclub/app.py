@@ -1,10 +1,12 @@
 from flask import Flask, send_from_directory,request,jsonify
 from flask_cors import CORS
+from bson import ObjectId
 import json
 import os
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from src.classes.users import users as Users
+from src.classes.projects import project as Projects
 
 
 app = Flask(__name__, static_folder="./build", static_url_path="/")
@@ -30,9 +32,6 @@ db_users = client["haasappusersdb"]
 projects_collection = db_projects["projects"]
 users_collection = db_users["users"]
 resources_collection = db_resources["resources"]
-
-
-
 
 
 @app.route("/", methods=["GET"])
@@ -78,6 +77,35 @@ def accountLogin() :
     
     #return success
     return jsonify ({'success': True, 'message': 'Account LogIn'})
+
+
+@app.route("/Projects/", methods=["POST"])
+def get_project():
+    data = request.json
+    project_id = data.get("project_id")
+    if not project_id:
+        return jsonify({"error": "Project ID is required"}), 400
+    try:
+        project_id = int(project_id)
+        project_data = projects_collection.find_one({"project_id": project_id})
+        if not project_data:
+            return jsonify({"error": "Project not found"}), 404
+   
+    
+        def convert_objectid_to_str(obj):
+            if isinstance(obj, list):
+                return [str(item) if isinstance(item, ObjectId) else item for item in obj  ]
+            elif isinstance(obj, ObjectId):
+                return str(obj)
+            elif isinstance(obj, dict):
+                return {k: convert_objectid_to_str(v) for k, v in obj.items()}
+            return obj
+            
+        project_data = convert_objectid_to_str(project_data)
+        return jsonify(project_data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 
 if __name__ == '__main__':
