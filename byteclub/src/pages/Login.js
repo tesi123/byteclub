@@ -5,7 +5,7 @@ import {Auth} from "../Auth"; // Authenticate and passes the username globally
 
 
 function Login() {
-  const {setGlobalUsername} = useContext(Auth) //set func global
+  const {username: globalUsername, setGlobalUsername} = useContext(Auth) //set func global
   const navigate = useNavigate(); /* to navigate to project page when logged in */
   const [displayPopup, setdisplayPopup] = useState(false); 
   const [username, setUsername] = useState('');
@@ -60,55 +60,71 @@ function Login() {
     }
   };
 
+  //function for logging out once you successfully loggedIn
+  const LogoutFunc = async(e) => {
+    // set global username to empty string
+    setGlobalUsername(null)
+    alert ("You successfully logged Out")
+    navigate('/') //navigate back to logIn page
+  }
   
-
+  //show if successfully logged In show only logout else show the rest
   return (
     <div style={{ padding: '20px' }}>
-      <h2>Login</h2>
+      { globalUsername ? (
+        <>
+          <h2> Welcome {globalUsername}</h2>
+          <button onClick = {LogoutFunc}>Logout</button>
+        </>
+      ) : (
+        <>
+          <h2>Login</h2>
       
-      <form onSubmit={runLogin}>
-        <input 
-          type="text" 
-          placeholder="Username" 
-          value={username} 
-          onChange={(e) => setUsername(e.target.value)} 
-        />
-        <input 
-          type="password" 
-          placeholder="Password" 
-          value={password} 
-          onChange={(e) => setPassword(e.target.value)} 
-        />
-        <br />
-        <br />
-        <button type="submit">Login</button> 
-      </form>
+          <form onSubmit={runLogin}>
+          <input 
+            type="text" 
+            placeholder="Username" 
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)} 
+          />
+          <input 
+            type="password" 
+            placeholder="Password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+          />
+          <br />
+          <br />
+          <button type="submit">Login</button> 
+        </form>
 
-      <br />
-      <button type="button" onClick={() => setdisplayPopup(true)}>Create Account</button>
+        <br />
+        <button type="button" onClick={() => setdisplayPopup(true)}>Create Account</button>
 
-      {displayPopup && (
-        <div>
-          <h3>Create Account</h3>
-          <form onSubmit={CreateAccount}>
-            <input 
-              type="text" 
-              placeholder="New Username" 
-              value={newUsername} 
-              onChange={(e) => setnewUsername(e.target.value)} 
-            />
-            <input
-              type="password" 
-              placeholder="New Password"
-              value={newPassword} 
-              onChange={(e) => setNewPassword(e.target.value)} 
-            />
-            <br />
-            <button type="submit">Submit</button>
-            <button type="button" onClick={() => setdisplayPopup(false)}>Cancel</button>
-          </form>
-        </div>
-      )}
+        {displayPopup && (
+          <div>
+            <h3>Create Account</h3>
+            <form onSubmit={CreateAccount}>
+              <input 
+                type="text" 
+                placeholder="New Username" 
+                value={newUsername} 
+                onChange={(e) => setnewUsername(e.target.value)} 
+              />
+              <input
+                type="password" 
+                placeholder="New Password"
+                value={newPassword} 
+                onChange={(e) => setNewPassword(e.target.value)} 
+              />
+              <br />
+              <button type="submit">Submit</button>
+              <button type="button" onClick={() => setdisplayPopup(false)}>Cancel</button>
+            </form>
+          </div>
+          )} 
+        </>
+      )}   
     </div>
   );
 }
