@@ -54,9 +54,9 @@ def accountCreate() :
     
     #save user into the database 
     user = Users(username= user, pswd= pswd)
+    user.encrypt_user(4)
     #save user and return success
     users_collection.insert_one({'username': user.username, 'password': user.pswd})
-    tempUserArr.append({'Username': user, 'pswd': pswd})
     return jsonify ({'success': True, 'message': 'Account created'})
 
 
@@ -64,14 +64,16 @@ def accountCreate() :
 @app.route("/logIn/", methods= ["POST"])
 def accountLogin() :
     data = request.json # get json from frontend
+
     user = data.get('Username')
     pswd = data.get('pswd')
     print ("IS IN BACKEND THE USER logIn IS " + str(user)+ " PSWD: " + str(pswd))
-    
+    decrypt_user = Users(username= user, pswd= pswd)
+    decrypt_user.encrypt_user(4)
     #check user or pswd is missing or if user doesn't exist already
     if not user or not pswd : 
         return jsonify ({'success': False, 'message': 'username or password is missing'})
-    dbUser = users_collection.find_one({"username": str(user) })
+    dbUser = users_collection.find_one({"username": str(decrypt_user.username) })
     if not dbUser:
         return jsonify ({'success': False, 'message': 'username does not exists'})
     

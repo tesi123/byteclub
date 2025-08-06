@@ -6,9 +6,15 @@ export const Auth = createContext(); /* global storage for user's login info */
 
 export const AuthProvider = ({ children }) => {
   const [username, setGlobalUsername] = useState("");
-    /* sets the username as send it to all child components like projects */
+  const [userId, setGlobalUserId] = useState("");
+    /* sets the username and user_id as send it to all child components like projects */
   return (
-    <Auth.Provider value={{ username, setGlobalUsername }}>
+    <Auth.Provider value={{ 
+        username,
+        setGlobalUsername,
+        userId,
+        setGlobalUserId,
+         }}>
       {children}
     </Auth.Provider>
   );
