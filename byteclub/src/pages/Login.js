@@ -85,7 +85,6 @@ function Login() {
       { globalUsername ? (
         <>
           <h2> Welcome {globalUsername} </h2>
-          <button onClick = {LogoutFunc}>Logout</button>
         </>
       ) : (
         <>
