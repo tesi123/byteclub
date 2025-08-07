@@ -11,8 +11,8 @@ function App() {
     <Router>
       <nav>
         <Link to="/">  Login</Link> | 
-        <Link to="/Projects"> Projects</Link> |
-        <Link to="/Hardwarecheck"> Hardware Check</Link>
+        <Link to="/projects"> Projects</Link> |
+        <Link to="/hardwarecheck"> Hardware Check</Link>
       </nav>
 
       <Routes>

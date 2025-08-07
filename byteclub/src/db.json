@@ -1,0 +1,18 @@
+
+[
+  {
+    "user_id": 1,
+    "username": "alice",
+    "password": "password123"
+  },
+  {
+    "user_id": 2,
+    "username": "bob",
+    "password": "securepass456"
+  },
+  {
+    "user_id": 3,
+    "username": "charlie",
+    "password": "charliepwd789"
+  }
+]
