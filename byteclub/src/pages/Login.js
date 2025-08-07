@@ -41,19 +41,33 @@ function Login() {
     e.preventDefault(); 
     alert(`Creating account for: ${newUsername}`);
     setdisplayPopup(false); 
-    /* added link to backend when you createAccount save username &pswd*/
-    const response = await fetch("/createAccount/",{
+    try{
+
+  /* added link to backend when you createAccount save username &pswd*/
+      const response = await fetch("http://127.0.0.1:81/createAccount/",{
       method: "POST", 
       headers:  {"Content-Type" : "application/json"},
       mode: "cors",
       body: JSON.stringify({'Username': newUsername, 'pswd': newPassword})
     });
-    const data =  await response.json();
+    let data = {};
+    try{
+      const text = await response.text();
+      data = text ? JSON.parse(text): {};}
+    catch (error) {
+      console.error("Error parsing response:", error);
+    }
+  
+   // const data =  await response.json();
     if (data.success) {
       alert("Account created!");
       setdisplayPopup(false);
     } else {
       alert("Username already exists or error in password");
+    }
+    } catch (error) {
+      console.error("Error creating account:", error);
+      alert("Error creating account, please try again.");
     }
   };
 
