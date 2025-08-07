@@ -1,64 +1,71 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { Auth } from '../Auth'; // get the global username func
 
 function Projects() {
-  //const navigate = useNavigate();
- // const[projects, setProjects] = useState([]);
-
-  // State for existing project access
-  const[existingProjectId, setExistingProjectId] = useState('');
-   // Handle creating a new project
-  const [newProject, setNewProject] = useState({
-    project_name: '',
-    project_desc: '',
-    num_of_hardware_sets: '',
-    members_list: [],
-    hardware_set_id: [],
-  });
-
-  const [projectDetails, setProjectDetails] = useState(null);
+  const { username } = useContext(Auth); // get username
   const navigate = useNavigate();
 
+  // State for new project input fields
+  const [newProject, setNewProject] = useState({
+    id: '',
+    name: '',
+    description: ''
+  });
+
+  // State for existing project access
+  const [existingProjectId, setExistingProjectId] = useState('');
+  const [projectDetails, setProjectDetails] = useState(null);
+
+  // Handle creating a new project
   const handleCreate = () => {
-    console.log('Creating project:', newProject);
-    axios.post('http://localhost:5000/projects', newProject)
-      .then(response => {
-        console.log('Project created:', response.data);
-        alert('Project created successfully!');
-        setNewProject({
-          project_name: '',
-          project_desc: '',
-          num_of_hardware_sets: '',
-          members_list: [],
-          hardware_set_id: [],
-        });
-      })
-      .catch(error => {
-        console.error('Error creating project:', error);
-        alert('Failed to create project. Please try again.');
-      });
+    const { id, name, description } = newProject;
+
+    // Check if all fields are filled
+    if (!id.trim() || !name.trim() || !description.trim()) {
+      const missingFields = [];
+      if (!id.trim()) missingFields.push('Project ID');
+      if (!name.trim()) missingFields.push('Project Name');
+      if (!description.trim()) missingFields.push('Description');
+      alert('Please fill in: ' + missingFields.join(', '));
+      return;
+    }
+
+    // Simulate success message (no backend validation yet)
+    alert(`Successfully created:\nProject ID: ${id}\nProject Name: ${name}\nDescription: ${description}`);
   };
 
-  const handleAccess = async(e) => {
-    const id = parseInt(existingProjectId);
-    if (isNaN(id) || id <= 0) {
-      alert('Please enter a valid project ID.');
+  // Handle accessing an existing project
+  const handleAccess = async () => {
+    const id = existingProjectId.trim();
+    if (id === '') {
+      alert('Please enter a project ID');
+      setProjectDetails(null);
       return;
-    } 
+    }
+
     try {
-      const response = await axios.get(`http://localhost:5000/projects/${existingProjectId}`);
-      if (response.data) {
-        setProjectDetails(response.data);
-        console.log('Project details:', response.data);
-      } else {
-        alert('Project not found.');
+      const response = await fetch(`http://localhost:81/Projects/`, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project_id: id })
+      });
+
+      if (!response.ok) {
+        setProjectDetails(null);
+        alert('Project not found or error accessing project');
+        return;
       }
+
+      const data = await response.json();
+      setProjectDetails(data);
     } catch (error) {
-      console.error('Error accessing project:', error);
-      alert('Failed to access project. Please try again.');
+      setProjectDetails(null);
+      alert('Project not found or error accessing project');
     }
   };
+
   // Navigate to Hardware Check page
   const handleHardwareCheck = () => {
     navigate('/hardwarecheck');
@@ -90,28 +97,25 @@ function Projects() {
       </div>
 
       {/* Access Existing Project Section */}
-   <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '30px' }}>
-  <h3>Access Existing Project</h3>
-  <input
-    placeholder="Project ID"
-    value={existingProjectId}
-    onChange={(e) => setExistingProjectId(e.target.value)}
-  />
-  <br /><br />
-  <button onClick={handleAccess}>Access Project</button>
-
-  {projectDetails && (
-    <div>
-      <h4>Project Name: {projectDetails.project_name}</h4>
-      <p>Description: {projectDetails.project_desc}</p>
-      <p>Hardware Sets: {projectDetails.hardware_set_id.join(', ')}</p>
-    </div>
-  )}
-</div>
-      {/* Hardware Navigation Section */}
-      <div style={{ border: '1px dashed #aaa', padding: '15px' }}>
-        <h3>Hardware</h3>
-        <button onClick={handleHardwareCheck}>Go to Hardware Check Page</button>
+      <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '30px' }}>
+        <h3>Existing Project</h3>
+        <input
+          placeholder="Project ID"
+          value={existingProjectId}
+          onChange={(e) => setExistingProjectId(e.target.value)}
+        /><br /><br />
+        <button onClick={handleAccess}>Access Project</button>
+        {projectDetails && (
+          <div>
+            <h4>Project Name: {projectDetails.project_name}</h4>
+            <p>Description: {projectDetails.project_desc}</p>
+            <p>Hardware Sets: {projectDetails.hardware_set_id.join(', ')}</p>
+            <div style={{ border: '1px dashed #aaa', padding: '15px', marginTop: '15px' }}>
+              <h3>Hardware</h3>
+              <button onClick={handleHardwareCheck}>Go to Hardware Check Page</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
