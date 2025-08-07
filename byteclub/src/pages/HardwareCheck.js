@@ -11,7 +11,9 @@ export default function App() {
 
   // dummy hardware set
   const [hardwareSets, setHardwareSets] = useState([
-    { id: 1, name: 'HWSet 1', capacity: '_', available: '_' }
+    { id: 1, name: 'HWSet 1', capacity: 9999, available: 9999 },
+    { id: 2, name: 'HWSet 2', capacity: 9999, available: 9999 },
+
   ]);
 
   // messages
