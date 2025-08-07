@@ -5,8 +5,7 @@ import {Auth} from "../Auth"; // Authenticate and passes the username globally
 
 
 function Login() {
-  const {username: globalUsername, setGlobalUsername,
-     userId: globalUserId, setGlobalUserId} = useContext(Auth) //set func global
+  const {username: globalUsername, setGlobalUsername} = useContext(Auth) //set func global
   const navigate = useNavigate(); /* to navigate to project page when logged in */
   const [displayPopup, setdisplayPopup] = useState(false); 
   const [username, setUsername] = useState('');
@@ -29,21 +28,13 @@ function Login() {
     const response =  await fetch ("http://127.0.0.1:81/logIn/", requestOptions); /* await until response comes back */
     const data = await response.json(); /* parses response into JSON */
     if (data.success) {
-     // alert(" Logged In successfully!");
-      let id = data["_id"] ;//get the userID
-      console.log("THIS IS THE USERID ", id);
-      setGlobalUserId(id);
-      console.log("THIS IS THE USERID IN GLOBAL ", globalUserId);
       setGlobalUsername(username); // sets the success username globally
       alert(" Logged In successfully!");
       setdisplayPopup(false);
       navigate("/Projects");
     } else {
-
       alert("error logging in check username or password");
-    }
-    
-      
+    }   
   };
 
   const CreateAccount = async(e) => {
@@ -70,7 +61,6 @@ function Login() {
   const LogoutFunc = async(e) => {
     // set global username to empty string
     setGlobalUsername(null)
-    setGlobalUserId(null)
     alert ("You successfully logged Out")
     navigate('/') //navigate back to logIn page
   }
@@ -80,7 +70,7 @@ function Login() {
     <div style={{ padding: '20px' }}>
       { globalUsername ? (
         <>
-          <h2> Welcome {globalUsername}  {globalUserId} </h2>
+          <h2> Welcome {globalUsername} </h2>
           <button onClick = {LogoutFunc}>Logout</button>
         </>
       ) : (

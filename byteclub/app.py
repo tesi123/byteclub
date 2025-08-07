@@ -73,6 +73,7 @@ def accountLogin() :
     #check user or pswd is missing or if user doesn't exist already
     if not user or not pswd : 
         return jsonify ({'success': False, 'message': 'username or password is missing'})
+    
     dbUser = users_collection.find_one({"username": str(decrypt_user.username) })
     if not dbUser:
         return jsonify ({'success': False, 'message': 'username does not exists'})
