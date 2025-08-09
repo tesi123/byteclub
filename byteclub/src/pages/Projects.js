@@ -8,9 +8,9 @@ function Projects() {
 
   // State for new project input fields
   const [newProject, setNewProject] = useState({
-    id: '',
-    name: '',
-    description: ''
+    project_id: '',
+    project_name: '',
+    project_desc: ''
   });
 
   // State for existing project access
@@ -18,21 +18,57 @@ function Projects() {
   const [projectDetails, setProjectDetails] = useState(null);
 
   // Handle creating a new project
-  const handleCreate = () => {
-    const { id, name, description } = newProject;
+  const handleCreate = async () => {
+    const{ project_id, project_name, project_desc } = newProject;
 
     // Check if all fields are filled
-    if (!id.trim() || !name.trim() || !description.trim()) {
+    if (!project_id.trim() || !project_name.trim() || !project_desc.trim()) {
       const missingFields = [];
-      if (!id.trim()) missingFields.push('Project ID');
-      if (!name.trim()) missingFields.push('Project Name');
-      if (!description.trim()) missingFields.push('Description');
+      if (!project_id.trim()) missingFields.push('Project ID');
+      if (!project_name.trim()) missingFields.push('Project Name');
+      if (!project_desc.trim()) missingFields.push('Description');
       alert('Please fill in: ' + missingFields.join(', '));
       return;
     }
 
+    try{
+      const response = await fetch("http://127.0.0.1:81/CreateProject/", {
+        method: 'POST',
+        mode: 'cors',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project_id,
+          project_name,
+          project_desc,
+          username // Include the username for backend processing
+        })
+      });
+
+     
+
+      const data = await response.json();
+       if (!response.ok) {
+        if(data.error === "Project ID already exists") {
+          alert('Project ID already exists. Please choose a different ID.');
+          return;
+        }else {alert('Error creating project. Please try again.'+ data.error);}
+        const errorText = await response.text();
+        console.error("Error creating project:", errorText);
+        alert('Error creating project. Please try again.');
+        throw new Error('Network response was not ok');
+      }
+      alert(`Project created successfully:`);
+      setProjectDetails(data.project); // Update state with the new project details
+      setNewProject({ project_id: '', project_name: '', project_desc: '' }); // Reset input fields
+    }
+    catch (error) {
+      console.error("Error creating project:", error);
+      alert('Error creating project. Please try again.');
+      return;
+    }
+
     // Simulate success message (no backend validation yet)
-    alert(`Successfully created:\nProject ID: ${id}\nProject Name: ${name}\nDescription: ${description}`);
+   // alert(`Successfully created:\nProject ID: ${id}\nProject Name: ${name}\nDescription: ${description}`);
   };
 
   // Handle accessing an existing project
@@ -45,11 +81,11 @@ function Projects() {
     }
 
     try {
-      const response = await fetch(`http://localhost:81/Projects/`, {
+      const response = await fetch(`http://127.0.0.1:81/Projects/`, {
         method: 'POST',
         mode: 'cors',
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_id: id })
+        body: JSON.stringify({ project_id: id , username:username}) // Include the global username
       });
 
       if (!response.ok) {
@@ -59,7 +95,11 @@ function Projects() {
       }
 
       const data = await response.json();
-      setProjectDetails(data);
+      if (response.status === 201 && data.message) {
+  
+      alert(data.message);  // new member added to the project popup alert
+    }
+      setProjectDetails(data.project);
     } catch (error) {
       setProjectDetails(null);
       alert('Project not found or error accessing project');
@@ -80,18 +120,18 @@ function Projects() {
         <h3>Create New Project</h3>
         <input
           placeholder="Project ID"
-          value={newProject.id}
-          onChange={(e) => setNewProject({ ...newProject, id: e.target.value })}
+          value={newProject.project_id}
+          onChange={(e) => setNewProject({ ...newProject, project_id: e.target.value })}
         /><br /><br />
         <input
           placeholder="Project Name"
-          value={newProject.name}
-          onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+          value={newProject.project_name}
+          onChange={(e) => setNewProject({ ...newProject, project_name: e.target.value })}
         /><br /><br />
         <textarea
           placeholder="Description"
-          value={newProject.description}
-          onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+          value={newProject.project_desc}
+          onChange={(e) => setNewProject({ ...newProject, project_desc: e.target.value })}
         /><br /><br />
         <button onClick={handleCreate}>Create</button>
       </div>
@@ -109,7 +149,12 @@ function Projects() {
           <div>
             <h4>Project Name: {projectDetails.project_name}</h4>
             <p>Description: {projectDetails.project_desc}</p>
-            <p>Hardware Sets: {projectDetails.hardware_set_id.join(', ')}</p>
+            <p>Hardware Sets: {projectDetails.hardware_set_id && projectDetails.hardware_set_id.length>0 ? projectDetails.hardware_set_id.join(', '): 'No hardware sets available'}</p>
+          
+
+            <p>Hardware Sets: {projectDetails.hardware_set_id && projectDetails.hardware_set_id.length > 0
+  ? projectDetails.hardware_set_id.join(', ')
+  : 'No hardware sets available'}</p>
             <div style={{ border: '1px dashed #aaa', padding: '15px', marginTop: '15px' }}>
               <h3>Hardware</h3>
               <button onClick={handleHardwareCheck}>Go to Hardware Check Page</button>

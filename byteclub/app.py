@@ -81,21 +81,7 @@ def accountLogin() :
     #return success
     return jsonify ({'success': True, 'message': 'Account LogIn'})
 
-
-@app.route("/Projects/", methods=["POST"])
-def get_project():
-    data = request.json
-    project_id = data.get("project_id")
-    if not project_id:
-        return jsonify({"error": "Project ID is required"}), 400
-    try:
-        project_id = int(project_id)
-        project_data = projects_collection.find_one({"project_id": project_id})
-        if not project_data:
-            return jsonify({"error": "Project not found"}), 404
-   
-    
-        def convert_objectid_to_str(obj):
+def convert_objectid_to_str(obj):
             if isinstance(obj, list):
                 return [str(item) if isinstance(item, ObjectId) else item for item in obj  ]
             elif isinstance(obj, ObjectId):
@@ -104,12 +90,83 @@ def get_project():
                 return {k: convert_objectid_to_str(v) for k, v in obj.items()}
             return obj
             
-        project_data = convert_objectid_to_str(project_data)
-        return jsonify(project_data), 200
+@app.route("/Projects/", methods=["POST"])
+def get_project():
+    data = request.json
+    project_id = data.get("project_id")
+    username = data.get("username")
+    # check if project_id is provided and is an integer
+    try:
+        project_id = int(project_id)
+    except (ValueError, TypeError):
+        return jsonify({"error": "Project ID must be an integer"}), 400
+    #encrypt the username for security
+    enc_user = Users(username=username, pswd="")
+    enc_user.encrypt_user(4) 
+    existing_project = projects_collection.find_one({"project_id": project_id})
+    if not existing_project:
+        return jsonify({"error": "Project not found"}), 404
+    #find user in the database
+    user = users_collection.find_one({"username": enc_user.username})
+    if not user:
+            return jsonify({"error": "User not found"}), 404
+    #find project in the database
+    project_data = projects_collection.find_one({"project_id": project_id})
+    if not project_data:
+        return jsonify({"error": "Project not found"}), 404
+    #if already a member of the project, return the project data
+    if user["_id"] in project_data.get("members_list", []):
+        return jsonify({"message": "User is already a member of the project", 
+                        "project": convert_objectid_to_str(project_data)}), 200
+    #if not a member of the project, add user to the project
+    try:
+        projects_collection.update_one({"project_id": project_id}, {"$addToSet": {"members_list": user["_id"]}})
+        project_data = projects_collection.find_one({"project_id": project_id})
+        return jsonify({"message": "New member added to the project", 'project': convert_objectid_to_str(project_data)}), 201 # Fetch updated project data           
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/CreateProject/", methods=["POST"])
+def create_project():
+    data = request.get_json()
+    project_id = data.get("project_id")
+    project_name = data.get("project_name")
+    project_desc = data.get("project_desc")
+    username = data.get("username")
 
+    enc_user = Users(username=username, pswd="")
+    enc_user.encrypt_user(4)  # Encrypt the username for security
+ 
+    user = users_collection.find_one({"username": enc_user.username})
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    if not project_id or not project_name or not project_desc:
+        return jsonify({"error": "All fields are required"}), 400
+    try:
+        project_id = int(data.get("project_id", None))
+    except (ValueError, TypeError):
+        return jsonify({"error": "Project ID must be an integer"}), 400
+    #insert into the database
+    existing_project = projects_collection.find_one({"project_id": int(project_id)})
+    if existing_project:
+        return jsonify({"error": "Project ID already exists"}), 400
+    
+    try:
+        project_id = int(project_id)
+        new_project = {
+            "project_id": project_id,
+            "project_name": project_name,
+            "project_desc": project_desc, 
+            "members_list": [user["_id"]] # Add user ID to members
+        }
+        insert_result = projects_collection.insert_one(new_project)
+        # Retrieve the inserted project document
+        inserted_project = projects_collection.find_one({"_id": insert_result.inserted_id})
+        inserted_project = convert_objectid_to_str(inserted_project)  # Convert ObjectId to string for JSON
+        return jsonify({"message": "Project created successfully", 'project':inserted_project}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=False, port=os.environ.get("PORT", 81))
