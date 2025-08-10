@@ -16,7 +16,7 @@ function Projects() {
   // State for existing project access
   const [existingProjectId, setExistingProjectId] = useState('');
   const [projectDetails, setProjectDetails] = useState(null);
-
+  
   // Handle creating a new project
   const handleCreate = async () => {
     const{ project_id, project_name, project_desc } = newProject;
@@ -30,7 +30,7 @@ function Projects() {
       alert('Please fill in: ' + missingFields.join(', '));
       return;
     }
-
+    
     try{
       const response = await fetch("/CreateProject/", {
         method: 'POST',
@@ -108,8 +108,14 @@ function Projects() {
 
   // Navigate to Hardware Check page
   const handleHardwareCheck = () => {
-    navigate('/hardwarecheck');
-  };
+  navigate('/hardwarecheck', {
+    state: {
+      userId: username,
+      projectName: projectDetails.project_name,
+      projectId: projectDetails.project_id  
+    }
+  });
+};
 
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>

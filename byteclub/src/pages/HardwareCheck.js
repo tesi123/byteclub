@@ -1,48 +1,130 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, use } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Auth } from '../Auth'; //get the global username func
-
+import {useLocation} from 'react-router-dom'
 export default function App() {
-  const { username } = useContext(Auth); // get username
-  // filled in with dummy code
-  const [userInfo, setUserInfo] = useState({
-    userId: '_',
-    projectName: '_',
-  });
-
-  // dummy hardware set
-  const [hardwareSets, setHardwareSets] = useState([
-    { id: 1, name: 'HWSet 1', capacity: 9999, available: 9999 },
-    { id: 2, name: 'HWSet 2', capacity: 9999, available: 9999 },
-
-  ]);
-
+const { username } = useContext(Auth); // get username
+  
+const location = useLocation();
+ // hardware sets state
+const [hardwareSets, setHardwareSets] = useState([]);
   // messages
-  const [message, setMessage] = useState(null);
-
+const [message, setMessage] = useState(null);
+// user info state
+const [userInfo, setProjectInfo] = useState({
+  userId: location.state?.userId || '',
+  projectName: location.state?.projectName || 'Default Project',
+  projectId: location.state?.projectId || null,
+});
+useEffect(() => {
+    if (location.state) {
+      setProjectInfo({
+      projectName: location.state.projectName || 'Default Project',
+      projectId: location.state.projectId || null,
+      userId: location.state.userId || username,
+      });
+    }
+  }, [location.state]);
+ 
+  useEffect(() => {
+    // Fetch hardware sets from the backend
+  fetchHardwareSets();},[])
+    // Simulate fetching user info
   /**
    * handling check-in, will connect to api
    */
-  const handleCheckIn = (setId, amount) => {
+
+  async function fetchHardwareSets() 
+  {
+      try {
+      const response = await fetch(`http://127.0.0.1:81/Resources/`, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { "Content-Type": "application/json" },
+       // body: JSON.stringify({ project_id: id , username:username}) // Include the global username
+      });
+
+    
+      const data = await response.json();
+      setHardwareSets(data.hardware); // Update state with the fetched hardware sets
+     
+    } catch (error) {
+      setHardwareSets(null);
+      setMessage({ type: 'error', text: 'Error fetching hardware sets.' });
+    }
+  }
+  const handleCheckIn =  async (setId, amount) => {
     if (amount <= 0) {
       setMessage({ type: 'error', text: 'Check-in amount must be greater than zero.' });
       return;
     }
+    if(!userInfo.projectId) {
+      setMessage({ type: 'error', text: 'Please select a project first.' });
+      return;
+    }
+    try{
+      const response = await fetch("http://127.0.0.1:81/HardwareCheckIn/", {
+        method: 'POST',
+        mode: 'cors',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ setid: setId, amount, projectId: userInfo.projectId }) // Include the global username
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setMessage({ type: 'success', text: `Checked in ${amount} units of ${setId}.` });
+        fetchHardwareSets(); // Refresh hardware sets after check-in
+      } else {
+        setMessage({ type: 'error', text: result.error || 'Error checking in hardware.' });
+      }
+
+    }
+    catch (error) {
+      console.error("Error checking in hardware:", error);
+      setMessage({ type: 'error', text: 'Error checking in hardware.' });
+    }
+
     // will replace with a backend call
-    console.log(`checking in ${amount} units for set ${setId}`);
-    setMessage({ type: 'success', text: `request to check IN ${amount} units sent` });
+  //  console.log(`checking in ${amount} units for set ${setId}`);
+   // setMessage({ type: 'success', text: `request to check IN ${amount} units sent` });
   };
 
+ 
+    // Simulate fetching hardware sets from an API
   /**
    * handling check-out, will connect to api
    */
-  const handleCheckout = (setId, amount) => {
+  const handleCheckout = async (setId, amount) => {
     if (amount <= 0) {
       setMessage({ type: 'error', text: 'checkout amount must be greater than zero' });
       return;
     }
+    if(!userInfo.projectId) {
+      setMessage({ type: 'error', text: 'Please select a project first.' });
+      return;
+    }
+    try{
+      const response = await fetch("http://127.0.0.1:81/HardwareCheckOut/",
+        {
+          method: 'POST',
+          mode: 'cors',
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ setid: setId, amount, projectId: userInfo.projectId }) // Include the global username
+        });
+      const result = await response.json();
+      if (response.ok) {
+        setMessage({ type: 'success', text: `Checked out ${amount} units of ${setId}.` });
+        fetchHardwareSets(); // Refresh hardware sets after checkout
+      } else {
+        setMessage({ type: 'error', text: result.error || 'Error checking out hardware.' });
+      }
+    }
+    catch (error) {
+      console.error("Error checking out hardware:", error);
+      setMessage({ type: 'error', text: 'Error checking out hardware.' });
+    }
     // later replace w backend call
-    console.log(`Checking OUT ${amount} units from set ${setId}`);
-    setMessage({ type: 'success', text: `request to check OUT ${amount} units sent` });
+    //console.log(`Checking OUT ${amount} units from set ${setId}`);
+    //setMessage({ type: 'success', text: `request to check OUT ${amount} units sent` });
   };
 
   return (
@@ -67,17 +149,21 @@ export default function App() {
       <main>
         <h2>Hardware Resource Status</h2>
         <div>
-          {hardwareSets.map(hwSet => (
+        {hardwareSets && hardwareSets.length > 0 ? (
+          hardwareSets.map(hwSet => (
             <HardwareSet
-              key={hwSet.id}
-              id={hwSet.id}
+              key={hwSet.setid}
+              id={hwSet.setid}
               name={hwSet.name}
               capacity={hwSet.capacity}
-              available={hwSet.available}
+              available={hwSet.availability}
               onCheckIn={handleCheckIn}
               onCheckout={handleCheckout}
             />
-          ))}
+          ))
+        ) : (
+          <p>No hardware resources available.</p>
+        )}
         </div>
       </main>
     </div>
@@ -94,12 +180,12 @@ function HardwareSet({ id, name, capacity, available, onCheckIn, onCheckout }) {
   };
 
   const handleActionClick = (action) => {
-    const numAmount = parseInt(amount, 10);
-    if (!isNaN(numAmount) && numAmount > 0) {
+    const qty = parseInt(amount, 10);
+    if (!isNaN(qty) && qty > 0) {
       if (action === 'checkin') {
-        onCheckIn(id, numAmount);
+        onCheckIn(id, qty);
       } else if (action === 'checkout') {
-        onCheckout(id, numAmount);
+        onCheckout(id, qty);
       }
       setAmount('');
     }

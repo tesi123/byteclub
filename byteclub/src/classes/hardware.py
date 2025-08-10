@@ -1,31 +1,53 @@
-class hardware:
-    def __init__(self, availability, capacity):
-        self.avail = availability
-        self.cap = capacity
+#nb28574
 
-    #function to check for outliers so that it can return error
-    #if you checkIn more than cap, or checkOut more than cap
-    def outliers (self, num, ischeckOut):
-        if ischeckOut and (self.avail - num < 0):
-            print ("can't checkout this amount. Max amount to request is " + str(self.avail))
-            return True
-        elif not ischeckOut and (self.avail + num > self.cap):
-            print ("can't checkIn this amount. Max amount to checkIn is " + str(self.cap - self.avail))
-            return True
-        return False
+class hardwareSet: #class to manage hardware set
+    def __init__(self): #constructor to initialize the hardware set
+        self.__capacity = 0 #setting initial capacity to 0, private variable
+        self.__availability = 0 #setting initial availability to 0, private variable
+        self.__checkedOut = [] # list to keep track of checked out units for each projectID
+
+    def initialize_capacity(self, qty): # method to initialize the capacity of the hardware set
+        self.__capacity = qty # set capacity to qty
+        self.__availability = qty   # set availability to qty
+        self.__checkedOut=[]    # set checked out list
+        
+
+    def get_availability(self): # method to get the number of available units
+        return self.__availability  #returning the number of available units
+    
+    def get_capacity(self): # method to get the total capacity of the hardware set
+        # This method returns the total capacity of the hardware set
+        return self.__capacity #returning the total capacity of the hardware set
     
 
-    #function to checkin hardware , add num to available quantities
-    def checkin (self, num):
-        if not self.outliers (num, False):
-            self.avail = self.avail + num
-            return True
-        return False
-    
-    #function to checkout hardware,  reduce num to available quantities
-    def checkout (self, num):
-        if self.outliers (num, True):
-            self.avail = self.avail - num
-            return True
-        return False 
-    
+    def check_out(self, qty, projectID): # method that checks out number of units specified by qty for a specific projectID
+    # Ensure the checkedOut list is long enough
+        if projectID >= len(self.__checkedOut): #if the projectID is greater than the length of the checkedOut list
+            self.__checkedOut.extend([0] * (projectID - len(self.__checkedOut) + 1)) # extend the list with zeros
+
+        if qty <= self.__availability: # if the requested quantity is less than or equal to the available units
+            self.__availability -= qty #subtract the requested quantity from the available units
+            self.__checkedOut[projectID] += qty # add the requested quantity to the checked out list for the specific projectID
+            return 0  # Success
+        else:
+            # Not enough units available, allow partial checkout
+            checked_out_qty = self.__availability # Check how many can be checked out
+            self.__checkedOut[projectID] += checked_out_qty # Add to the checked out list for the specific projectID
+            self.__availability = 0 # Set availability to 0 since all available units are checked out
+            return -1  # Error: not enough units
+
+ 
+    def check_in(self, qty, projectID): # method that checks in number of units specified by qty for a specific projectID
+    # Check if projectID is valid
+        if projectID >= len(self.__checkedOut): # if the projectID is greater than the length of the checkedOut list
+            return -1  # Project never checked out anything
+
+        # Check if trying to check in more than checked out
+        if qty > self.__checkedOut[projectID]: 
+            return -1  # Cannot check in more than checked out
+
+        # Proceed with check-in
+        self.__checkedOut[projectID] -= qty # Subtract the checked in quantity from the checked out list for the specific projectID
+        self.__availability += qty # Add the checked in quantity to the available units
+
+        return 0  # Success

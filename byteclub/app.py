@@ -7,6 +7,7 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from src.classes.users import users as Users
 from src.classes.projects import project as Projects
+from src.classes.hardware import hardwareSet as hardwareSet
 
 
 app = Flask(__name__, static_folder="./build", static_url_path="/")
@@ -89,13 +90,13 @@ def accountLogin() :
 
 
 def convert_objectid_to_str(obj):
-            if isinstance(obj, list):
-                return [str(item) if isinstance(item, ObjectId) else item for item in obj  ]
-            elif isinstance(obj, ObjectId):
-                return str(obj)
-            elif isinstance(obj, dict):
-                return {k: convert_objectid_to_str(v) for k, v in obj.items()}
-            return obj
+    if isinstance(obj, list):
+        return [convert_objectid_to_str(item) for item in obj]  # recursively process list items
+    elif isinstance(obj, ObjectId):
+        return str(obj)
+    elif isinstance(obj, dict):
+        return {k: convert_objectid_to_str(v) for k, v in obj.items()}
+    return obj
             
 @app.route("/Projects/", methods=["POST"])
 def get_project():
@@ -175,5 +176,159 @@ def create_project():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/Resources/", methods=["POST"])
+def get_all_resources():        
+    try:
+        # Fetch all resources from the database
+        resources = list(resources_collection.find())
+        # Convert ObjectId to string for JSON serialization
+        resources = convert_objectid_to_str(resources)
+        return jsonify({"hardware":resources}), 200
+    except Exception as e:
+        print(f"Error fetching resources: {e}")
+        return jsonify({"error": str(e)}), 500  
+
+def add_hardware_set_to_project(project_id, set_id):
+    project = projects_collection.find_one({"project_id": project_id})
+    if not project:
+        return False, "Project not found"
+    result = projects_collection.update_one({"project_id": project_id}, {"$addToSet": {"hardware_set_id": set_id}})
+
+    if result.modified_count == 0: #hardware set already existts
+        return False, "Hardware set already exists in project"
+    else:
+        return True, "Hardware set added to project"    
+    
+def check_out_hardware_for_project(project_id, set_id, qty):
+    # 1. Validate project and linkage
+    project = projects_collection.find_one({"project_id": project_id})
+    if not project:
+        return False, "Project not found"
+
+    if set_id not in project.get("hardware_set_ids", []):
+        return False, "Hardware set not linked to project"
+
+    # 2. Fetch hardware set info (assuming you store them in a collection)
+    hardware_set_doc = resources_collection.find_one({"setid": set_id})
+    if not hardware_set_doc:
+        return False, "Hardware set not found"
+
+    # 3. Create hardwareSet object and load current capacity and availability
+    hw = hardwareSet()
+    hw.initialize_capacity(hardware_set_doc["capacity"])
+    hw._hardwareSet__availability = hardware_set_doc.get("availability", hw.get_capacity())
+    hw._hardwareSet__checkedOut = hardware_set_doc.get("checkedOut", [])
+
+    # 4. Perform checkout (use project_id index in checkedOut list)
+    result = hw.check_out(qty, project_id)
+
+    if result == 0:
+        # Update the hardware set document in DB with new availability and checkedOut list
+        resources_collection.update_one(
+            {"setid": set_id},
+            {"$set": {
+                "availability": hw.get_availability(),
+                "checkedOut": hw._hardwareSet__checkedOut
+            }}
+        )
+        return True, "Checked out successfully"
+    else:
+        return False, "Not enough units available for checkout"
+    
+@app.route("/HardwareCheckIn/", methods=["POST"])
+def hardware_check_in():
+    data = request.json
+    set_id = data.get("setid")
+    amount = data.get("amount")
+    project_id = data.get("projectId")
+
+    if  set_id is None or amount is None or project_id is None:
+        return jsonify({"error": "setid, amount, and projectId are required"}), 400
+
+    try:
+        amount = int(amount)
+        project_id = int(project_id)
+    except ValueError:
+        return jsonify({"error": "Invalid setid, amount, or projectId"}), 400
+    #fetch the hardware set from the database
+    hardware_set_doc = resources_collection.find_one({"setid": set_id})
+    if not hardware_set_doc:
+        return jsonify({"error": "Hardware set not found"}), 404
+    # Check in the hardware
+    hw = hardwareSet()
+    hw.initialize_capacity(hardware_set_doc["capacity"])
+    hw._hardwareSet__availability = hardware_set_doc.get("availability", hw.get_capacity())
+    hw._hardwareSet__checkedOut = hardware_set_doc.get("checkedOut", [])
+
+    #check in the hardware
+    result = hw.check_in(amount, project_id)
+    if result == -1:
+        return jsonify({"error": "Cannot check in more than checked out"}), 400 
+    if result == 0:
+        # Update the hardware set document in DB with new availability and checkedOut list
+        resources_collection.update_one(
+            {"setid": set_id},
+            {"$set": {
+                "availability": hw.get_availability(),
+                "checkedOut": hw._hardwareSet__checkedOut
+            }}
+        )
+       
+
+        projects_collection.update_one({"project_id": project_id}, 
+        {"$inc": {f"checked_out.{set_id}":- amount}})
+        return jsonify({"message": f"Checked in {amount} units of {set_id}."}), 200
+    else:
+        return jsonify({"error": "Error checking in hardware."}), 500   
+
+@app.route("/HardwareCheckOut/", methods=["POST"])    
+def hardware_check_out():
+    data = request.json
+    set_id = data.get("setid")
+    amount = data.get("amount")
+    project_id = data.get("projectId")
+
+    if not set_id or not amount or not project_id:
+        return jsonify({"error": "setid, amount, and projectId are required"}), 400
+
+    try:
+        amount = int(amount)
+        project_id = int(project_id)
+    except ValueError:
+        return jsonify({"error": "Invalid setid, amount, or projectId"}), 400
+
+    # Fetch the hardware set from the database
+    hardware_set_doc = resources_collection.find_one({"setid": set_id})
+    if not hardware_set_doc:
+        return jsonify({"error": "Hardware set not found"}), 404
+
+    # Check out the hardware
+    hw = hardwareSet()
+    hw.initialize_capacity(hardware_set_doc["capacity"])
+    hw._hardwareSet__availability = hardware_set_doc.get("availability", hw.get_capacity())
+    hw._hardwareSet__checkedOut = hardware_set_doc.get("checkedOut", [])
+
+    result = hw.check_out(amount, project_id)
+    
+    if result == -1:
+        return jsonify({"error": "Not enough units available for checkout"}), 400 
+    if result == 0:
+        # Update the hardware set document in DB with new availability and checkedOut list
+        resources_collection.update_one(
+            {"setid": set_id},
+            {"$set": {
+                "availability": hw.get_availability(),
+                "checkedOut": hw._hardwareSet__checkedOut
+            }}
+        )
+        projects_collection.update_one({"project_id": project_id}, 
+                                        {"$addToSet": {"hardware_set_id": set_id}})
+
+        projects_collection.update_one({"project_id": project_id}, 
+        {"$inc": {f"checked_out.{set_id}": amount}})
+                                        
+        return jsonify({"message": f"Checked out {amount} units of {set_id}."}), 200
+    else:
+        return jsonify({"error": "Error checking out hardware."}), 500
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=False, port=os.environ.get("PORT", 81))
