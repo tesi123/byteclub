@@ -19,8 +19,6 @@ function App() {
         <>
         {' | '}
         <Link to="/Projects"> Projects</Link>
-        {' | '}
-        <Link to="/Hardwarecheck"> Hardware Check</Link>
         </>
         )}
       </nav>
