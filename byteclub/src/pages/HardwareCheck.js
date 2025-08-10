@@ -37,7 +37,7 @@ useEffect(() => {
   async function fetchHardwareSets() 
   {
       try {
-      const response = await fetch(`http://127.0.0.1:81/Resources/`, {
+      const response = await fetch(`/Resources/`, {
         method: 'POST',
         mode: 'cors',
         headers: { "Content-Type": "application/json" },
@@ -63,7 +63,7 @@ useEffect(() => {
       return;
     }
     try{
-      const response = await fetch("http://127.0.0.1:81/HardwareCheckIn/", {
+      const response = await fetch("/HardwareCheckIn/", {
         method: 'POST',
         mode: 'cors',
         headers: { "Content-Type": "application/json" },
@@ -103,7 +103,7 @@ useEffect(() => {
       return;
     }
     try{
-      const response = await fetch("http://127.0.0.1:81/HardwareCheckOut/",
+      const response = await fetch("/HardwareCheckOut/",
         {
           method: 'POST',
           mode: 'cors',
