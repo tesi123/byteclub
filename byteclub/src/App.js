@@ -5,14 +5,24 @@ import Projects from './pages/Projects';
 import HardwareCheck from './pages/HardwareCheck';
 //this makes sure the routes are closed if not loggedIn
 import AuthRoute from './AuthRoute'; 
+// These two hide the pages until the user logs in
+import { useContext } from 'react';
+import { Auth } from './Auth';
 
 function App() {
+  const { username } = useContext(Auth);
   return (
     <Router>
       <nav>
-        <Link to="/">  Login</Link> | 
-        <Link to="/Projects"> Projects</Link> |
+        <Link to="/">  Login</Link>
+        { username && (
+        <>
+        {' | '}
+        <Link to="/Projects"> Projects</Link>
+        {' | '}
         <Link to="/Hardwarecheck"> Hardware Check</Link>
+        </>
+        )}
       </nav>
 
       <Routes>
