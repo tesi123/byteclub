@@ -25,7 +25,7 @@ function Login() {
       mode: "cors",
       body: JSON.stringify({'Username': username, 'pswd': password })
     };
-    const response =  await fetch ("http://127.0.0.1:81/logIn/", requestOptions); /* await until response comes back */
+    const response =  await fetch ("/logIn/", requestOptions); /* await until response comes back */
     const data = await response.json(); /* parses response into JSON */
     if (data.success) {
       setGlobalUsername(username); // sets the success username globally
@@ -44,7 +44,7 @@ function Login() {
     try{
 
   /* added link to backend when you createAccount save username &pswd*/
-      const response = await fetch("http://127.0.0.1:81/createAccount/",{
+      const response = await fetch("/createAccount/",{
       method: "POST", 
       headers:  {"Content-Type" : "application/json"},
       mode: "cors",

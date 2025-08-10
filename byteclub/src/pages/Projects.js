@@ -32,7 +32,7 @@ function Projects() {
     }
 
     try{
-      const response = await fetch("http://127.0.0.1:81/CreateProject/", {
+      const response = await fetch("/CreateProject/", {
         method: 'POST',
         mode: 'cors',
         headers: { "Content-Type": "application/json" },
@@ -81,7 +81,7 @@ function Projects() {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:81/Projects/`, {
+      const response = await fetch(`/Projects/`, {
         method: 'POST',
         mode: 'cors',
         headers: { "Content-Type": "application/json" },
