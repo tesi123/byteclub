@@ -29,11 +29,11 @@ function Login() {
     const data = await response.json(); /* parses response into JSON */
     if (data.success) {
       setGlobalUsername(username); // sets the success username globally
-      alert(" Logged In successfully!");
+      alert(data.message);
       setdisplayPopup(false);
       navigate("/Projects");
     } else {
-      alert("error logging in check username or password");
+      alert(data.message);
     }   
   };
 
