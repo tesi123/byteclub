@@ -259,9 +259,11 @@ def hardware_check_in():
     hw.initialize_capacity(hardware_set_doc["capacity"])
     hw._hardwareSet__availability = hardware_set_doc.get("availability", hw.get_capacity())
     hw._hardwareSet__checkedOut = hardware_set_doc.get("checkedOut", [])
+    
 
     #check in the hardware
-    result = hw.check_in(amount, project_id)
+    result= hw.check_in(amount, project_id)
+    
     if result == -1:
         return jsonify({"error": "Cannot check in more than checked out"}), 400 
     if result == 0:
@@ -309,9 +311,7 @@ def hardware_check_out():
     hw._hardwareSet__checkedOut = hardware_set_doc.get("checkedOut", [])
 
     result = hw.check_out(amount, project_id)
-    
-    if result == -1:
-        return jsonify({"error": "Not enough units available for checkout"}), 400 
+    #partial checkout
     if result == 0:
         # Update the hardware set document in DB with new availability and checkedOut list
         resources_collection.update_one(
@@ -328,6 +328,19 @@ def hardware_check_out():
         {"$inc": {f"checked_out.{set_id}": amount}})
                                         
         return jsonify({"message": f"Checked out {amount} units of {set_id}."}), 200
+    elif result == 1:
+        resources_collection.update_one(
+            {"setid": set_id},
+            {"$set": {
+                "availability": hw.get_availability(),
+                "checkedOut": hw._hardwareSet__checkedOut
+            }}
+        )
+        projects_collection.update_one({"project_id": project_id}, 
+                                        {"$addToSet": {"hardware_set_id": set_id}})
+        projects_collection.update_one({"project_id": project_id}, 
+        {"$inc": {f"checked_out.{set_id}": amount}})
+        return jsonify({"message": f"Checked out {amount} units of {set_id} (partial checkout)."}), 200
     else:
         return jsonify({"error": "Error checking out hardware."}), 500
 if __name__ == '__main__':

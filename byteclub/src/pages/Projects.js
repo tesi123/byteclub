@@ -155,12 +155,27 @@ function Projects() {
           <div>
             <h4>Project Name: {projectDetails.project_name}</h4>
             <p>Description: {projectDetails.project_desc}</p>
-            <p>Hardware Sets: {projectDetails.hardware_set_id && projectDetails.hardware_set_id.length>0 ? projectDetails.hardware_set_id.join(', '): 'No hardware sets available'}</p>
-          
-
-            <p>Hardware Sets: {projectDetails.hardware_set_id && projectDetails.hardware_set_id.length > 0
-  ? projectDetails.hardware_set_id.join(', ')
-  : 'No hardware sets available'}</p>
+             <p>
+      Hardware Sets: {projectDetails.hardware_set_id && projectDetails.hardware_set_id.length > 0
+        ? projectDetails.hardware_set_id.join(', ')
+        : 'No hardware sets available'}
+    </p>
+            {projectDetails.checked_out && Object.keys(projectDetails.checked_out).length > 0 ? (
+      <div>
+        <h4>Checked Out Hardware Quantities:</h4>
+        <ul>
+          {Object.entries(projectDetails.checked_out).map(([hardwareId, qty]) => (
+            <li key={hardwareId}>
+              {hardwareId}: {qty} units
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : (
+      <p>Checked Out: 0</p>
+    )}
+            
+            {/* Button to navigate to Hardware Check page */}
             <div style={{ border: '1px dashed #aaa', padding: '15px', marginTop: '15px' }}>
               <h3>Hardware</h3>
               <button onClick={handleHardwareCheck}>Go to Hardware Check Page</button>

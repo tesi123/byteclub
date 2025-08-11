@@ -34,7 +34,7 @@ class hardwareSet: #class to manage hardware set
             checked_out_qty = self.__availability # Check how many can be checked out
             self.__checkedOut[projectID] += checked_out_qty # Add to the checked out list for the specific projectID
             self.__availability = 0 # Set availability to 0 since all available units are checked out
-            return -1  # Error: not enough units
+            return (1, checked_out_qty)  # Error: not enough units
 
  
     def check_in(self, qty, projectID): # method that checks in number of units specified by qty for a specific projectID
