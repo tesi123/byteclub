@@ -73,10 +73,7 @@ useEffect(() => {
       if (response.ok) {
         setMessage({ type: 'success', text: `Checked in ${amount} units of ${setId}.` });
         fetchHardwareSets(); // Refresh hardware sets after check-in
-      } else if (result.success && !(response.ok)) { // checkIn the max it can checkIn
-        setMessage({ type: 'error', text: result.error || 'Error checking in hardware.' });
-        fetchHardwareSets(); // Refresh hardware sets after check-in
-      } else{
+      } else {
         setMessage({ type: 'error', text: result.error || 'Error checking in hardware.' });
       }
 
@@ -115,11 +112,8 @@ useEffect(() => {
         });
       const result = await response.json();
       if (response.ok) {
-        setMessage({ type: 'success', text: `Checked out ${amount} units of ${setId}.`});
+        setMessage({ type: 'success', text: `Checked out ${amount} units of ${setId}.` });
         fetchHardwareSets(); // Refresh hardware sets after checkout
-      } else if (result.success && !(response.ok)){ //checkOut the max it can checkOut
-        setMessage({ type: 'error', text: result.error || 'Error checking in hardware.'});
-        fetchHardwareSets(); 
       } else {
         setMessage({ type: 'error', text: result.error || 'Error checking out hardware.' });
       }

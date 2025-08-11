@@ -29,13 +29,11 @@ class hardwareSet: #class to manage hardware set
             self.__availability -= qty #subtract the requested quantity from the available units
             self.__checkedOut[projectID] += qty # add the requested quantity to the checked out list for the specific projectID
             return 0  # Success
-        elif self.__availability > 0: #if the avail is less checkout as much as possible
+        else:
             # Not enough units available, allow partial checkout
             checked_out_qty = self.__availability # Check how many can be checked out
             self.__checkedOut[projectID] += checked_out_qty # Add to the checked out list for the specific projectID
             self.__availability = 0 # Set availability to 0 since all available units are checked out
-            return -2
-        else:
             return -1  # Error: not enough units
 
  
@@ -44,17 +42,12 @@ class hardwareSet: #class to manage hardware set
         if projectID >= len(self.__checkedOut): # if the projectID is greater than the length of the checkedOut list
             return -1  # Project never checked out anything
 
-        #check if check in what is checkedOut
-        if qty <= self.__checkedOut[projectID]: 
-            # Proceed with check-in
-            self.__checkedOut[projectID] -= qty # Subtract the checked in quantity from the checked out list for the specific projectID
-            self.__availability += qty # Add the checked in quantity to the available units
-            return 0
-        elif self.__availability < self.__capacity: #checkIn what you can and return error
-            maxCheckIn = self.__capacity - self.__availability
-            self.__availability += maxCheckIn
-            self.__checkedOut[projectID] -= maxCheckIn
-            return -2 
-        else: # can't checkIn more just error
-            return -1
+        # Check if trying to check in more than checked out
+        if qty > self.__checkedOut[projectID]: 
+            return -1  # Cannot check in more than checked out
 
+        # Proceed with check-in
+        self.__checkedOut[projectID] -= qty # Subtract the checked in quantity from the checked out list for the specific projectID
+        self.__availability += qty # Add the checked in quantity to the available units
+
+        return 0  # Success

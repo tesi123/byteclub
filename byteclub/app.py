@@ -259,12 +259,12 @@ def hardware_check_in():
     hw.initialize_capacity(hardware_set_doc["capacity"])
     hw._hardwareSet__availability = hardware_set_doc.get("availability", hw.get_capacity())
     hw._hardwareSet__checkedOut = hardware_set_doc.get("checkedOut", [])
-    maxCheckIn = hw.get_capacity() - hw.get_availability() #max to be able to check In
+
     #check in the hardware
     result = hw.check_in(amount, project_id)
     if result == -1:
         return jsonify({"error": "Cannot check in more than checked out"}), 400 
-    if result == 0 or result == -2:
+    if result == 0:
         # Update the hardware set document in DB with new availability and checkedOut list
         resources_collection.update_one(
             {"setid": set_id},
@@ -273,17 +273,11 @@ def hardware_check_in():
                 "checkedOut": hw._hardwareSet__checkedOut
             }}
         )
+       
 
-        if result == -2 :
-            projects_collection.update_one({"project_id": project_id}, 
-        {"$inc": {f"checked_out.{set_id}":- maxCheckIn}})
-            return jsonify({"success" : True,"error": "Cannot check in more than checked out, was only"
-            "able to checkIn " +str(maxCheckIn)}), 400 
-        
-        else :
-            projects_collection.update_one({"project_id": project_id}, 
-        {"$inc": {f"checked_out.{set_id}":- amount}})    
-            return jsonify({"message": f"Checked in {amount} units of {set_id}."}), 200
+        projects_collection.update_one({"project_id": project_id}, 
+        {"$inc": {f"checked_out.{set_id}":- amount}})
+        return jsonify({"message": f"Checked in {amount} units of {set_id}."}), 200
     else:
         return jsonify({"error": "Error checking in hardware."}), 500   
 
@@ -313,13 +307,12 @@ def hardware_check_out():
     hw.initialize_capacity(hardware_set_doc["capacity"])
     hw._hardwareSet__availability = hardware_set_doc.get("availability", hw.get_capacity())
     hw._hardwareSet__checkedOut = hardware_set_doc.get("checkedOut", [])
-    maxCheckOut = hw.get_availability() #max to be able to check Out
 
     result = hw.check_out(amount, project_id)
     
     if result == -1:
         return jsonify({"error": "Not enough units available for checkout"}), 400 
-    if result == 0 or result == -2:
+    if result == 0:
         # Update the hardware set document in DB with new availability and checkedOut list
         resources_collection.update_one(
             {"setid": set_id},
@@ -330,16 +323,11 @@ def hardware_check_out():
         )
         projects_collection.update_one({"project_id": project_id}, 
                                         {"$addToSet": {"hardware_set_id": set_id}})
-        if result == -2 :
-            projects_collection.update_one({"project_id": project_id}, 
-        {"$inc": {f"checked_out.{set_id}": maxCheckOut}})
-            return jsonify({"success" : True,"error": "Cannot check out more than available, was only "
-            "able to checkOut " +str(maxCheckOut)}), 400  
-        else :
-            projects_collection.update_one({"project_id": project_id}, 
-        {"$inc": {f"checked_out.{set_id}": amount}})                                
-            return jsonify({"message": f"Checked out {amount} units of {set_id}."}), 200
-        
+
+        projects_collection.update_one({"project_id": project_id}, 
+        {"$inc": {f"checked_out.{set_id}": amount}})
+                                        
+        return jsonify({"message": f"Checked out {amount} units of {set_id}."}), 200
     else:
         return jsonify({"error": "Error checking out hardware."}), 500
 if __name__ == '__main__':
